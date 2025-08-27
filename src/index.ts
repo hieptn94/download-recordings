@@ -118,7 +118,11 @@ program
         });
 
         console.log("Downloading other pages...");
-        const otherPages = _.range(1, 2400).slice(1);
+        console.log("Total pages", firstPage.data.cdr_data.last_page);
+        const otherPages = _.range(
+          1,
+          firstPage.data.cdr_data.last_page ?? 0
+        ).slice(1);
         for (let i = 0; i < otherPages.length; i++) {
           const page = otherPages[i];
           try {
