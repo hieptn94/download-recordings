@@ -10,6 +10,7 @@ import PQueue from "p-queue";
 import ky from "ky";
 import downloadRecordings from "./downloadRecordings";
 import _ from "lodash";
+import execute from "./execute";
 
 // Get package.json for version info
 const __filename = fileURLToPath(import.meta.url);
@@ -37,12 +38,12 @@ program
   .option(
     "-o, --output <path>",
     "output directory for downloads",
-    "./downloads"
+    "./downloads",
   )
   .option("-v, --verbose", "enable verbose logging")
   .option(
     "--dry-run",
-    "show what would be downloaded without actually downloading"
+    "show what would be downloaded without actually downloading",
   )
   .action(
     async (options: {
@@ -86,74 +87,12 @@ program
           console.log(`  Output Directory: ${output}`);
           return;
         }
-
-        console.log("Starting download process...");
-
-        const queue = new PQueue({ concurrency: 10 });
-        const downloadMultipleRecordings = downloadRecordings(ky.extend({}))(
-          queue
-        );
-
-        const client = createClient({
-          url,
-          token,
-        });
-        const downloadPage = download(client);
-
-        console.log("Downloading first page...");
-        const firstPage = await downloadPage({
-          startDate,
-          endDate,
-          page: 1,
-        });
-
-        const firstUrls = firstPage.data.cdr_data.data.map(
-          (c) => c.record_file
-        );
-
-        console.log("Downloading first page recordings...");
-        await downloadMultipleRecordings({
-          urls: firstUrls,
-          directory: output,
-        });
-
-        console.log("Downloading other pages...");
-        console.log("Total pages", firstPage.data.cdr_data.last_page);
-        const otherPages = _.range(
-          1,
-          firstPage.data.cdr_data.last_page ?? 0
-        ).slice(1);
-        for (let i = 0; i < otherPages.length; i++) {
-          const page = otherPages[i];
-          try {
-            console.log(`Downloading page ${page}...`);
-            const response = await downloadPage({
-              startDate,
-              endDate,
-              page,
-            });
-            const urls = response.data.cdr_data.data.map((c) => c.record_file);
-            console.log(
-              `Downloaded ${urls.length} recordings from page ${page}`
-            );
-            await downloadMultipleRecordings({
-              urls,
-              directory: output,
-            });
-          } catch (error) {
-            console.error(`Error downloading page ${page}:`, error);
-          }
-        }
-
-        console.log("Download completed successfully!");
-        console.log("Downloaded recordings:");
-        console.log(firstUrls);
-        console.log(otherPages);
+        execute(options);
       } catch (error) {
         console.error("Error during download:", error);
         process.exit(1);
       }
-    }
+    },
   );
 
 // Global options

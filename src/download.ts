@@ -1,5 +1,5 @@
 import { KyInstance } from "ky";
-import { Response } from "./types";
+import { PageData } from "./types";
 
 type Options = {
   startDate: string;
@@ -9,7 +9,7 @@ type Options = {
 
 const download =
   (client: KyInstance) =>
-  async (options: Options): Promise<Response> => {
+  async (options: Options): Promise<PageData> => {
     const response = await client.post("api/histories", {
       json: {
         datefilter_to: options.endDate,
@@ -22,7 +22,7 @@ const download =
       },
     });
 
-    return response.json<Response>();
+    return response.json<PageData>();
   };
 
 export default download;
